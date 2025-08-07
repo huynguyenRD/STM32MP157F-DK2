@@ -1,0 +1,10 @@
+#include <QtCore/QFile>
+#include <QDebug>
+#include "data-provider.h"
+
+DataProvider::DataProvider()
+{
+	QObject::connect(&timer, &QTimer::timeout,
+			this, 
+}
+

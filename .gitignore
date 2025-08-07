@@ -1,0 +1,42 @@
+# Build directories and artifacts
+**/build/
+**/obj/
+**/bin/
+*.o
+*.a
+*.so
+*.so.*
+
+# Qt build artifacts
+**/Makefile
+**/.qmake.stash
+**/moc_*.cpp
+**/moc_*.h
+**/ui_*.h
+**/qrc_*.cpp
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.pro.user
+*.pro.user.*
+
+# OS files
+.DS_Store
+Thumbs.db
+*.tmp
+*.temp
+*.log
+
+# Backup files
+*.bak
+*.orig
+*~
+
+# Generated files
+tags
+TAGS
+.tags
