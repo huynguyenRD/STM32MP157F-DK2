@@ -56,6 +56,41 @@ typedef enum {
     HAL_BUTTON_PRESSED = 1
 } hal_button_state_t;
 
+/* LCD Definitions - LCD Display Specifications for STM32MP157F-DK2 */
+#define LCD_WIDTH           480
+#define LCD_HEIGHT          800
+#define LCD_BPP             32      /* 32 bits per pixel (ARGB8888) */
+#define LCD_BUFFER_SIZE     (LCD_WIDTH * LCD_HEIGHT * (LCD_BPP / 8))
+
+/* Color definitions for ARGB8888 format (32-bit) - Fixed format */
+#define LCD_COLOR_BLACK     0xFF000000
+#define LCD_COLOR_WHITE     0xFFFFFFFF
+#define LCD_COLOR_RED       0xFFFF0000
+#define LCD_COLOR_GREEN     0xFF00FF00
+#define LCD_COLOR_BLUE      0xFF0000FF
+#define LCD_COLOR_YELLOW    0xFFFFFF00
+#define LCD_COLOR_CYAN      0xFF00FFFF
+#define LCD_COLOR_MAGENTA   0xFFFF00FF
+
+typedef enum {
+    HAL_LCD_OK = 0,
+    HAL_LCD_ERROR,
+    HAL_LCD_INVALID_PARAM,
+    HAL_LCD_NOT_INITIALIZED
+} hal_lcd_status_t;
+
+typedef struct {
+    uint16_t x;
+    uint16_t y;
+} hal_lcd_point_t;
+
+typedef struct {
+    uint16_t x;
+    uint16_t y;
+    uint16_t width;
+    uint16_t height;
+} hal_lcd_rect_t;
+
 /*=============================================================================
  * LED Control Functions
  *============================================================================*/
@@ -125,6 +160,47 @@ hal_status_t hal_button_deinit(void);
  * @return HAL_OK on success, error code otherwise
  */
 hal_status_t hal_button_get_state(hal_button_t button, hal_button_state_t *state);
+
+/*=============================================================================
+ * LCD Control Functions
+ *============================================================================*/
+
+/**
+ * @brief Initialize the LCD subsystem
+ * @return HAL_LCD_OK on success, error code otherwise
+ */
+hal_lcd_status_t hal_lcd_init(void);
+
+/**
+ * @brief Deinitialize the LCD subsystem
+ * @return HAL_LCD_OK on success, error code otherwise
+ */
+hal_lcd_status_t hal_lcd_deinit(void);
+
+/**
+ * @brief Clear the LCD with specified color
+ * @param color 32-bit ARGB color value
+ * @return HAL_LCD_OK on success, error code otherwise
+ */
+hal_lcd_status_t hal_lcd_clear(uint32_t color);
+
+/**
+ * @brief Set a pixel on the LCD
+ * @param x X coordinate
+ * @param y Y coordinate  
+ * @param color 32-bit ARGB color value
+ * @return HAL_LCD_OK on success, error code otherwise
+ */
+hal_lcd_status_t hal_lcd_set_pixel(uint16_t x, uint16_t y, uint32_t color);
+
+/**
+ * @brief Draw a rectangle on the LCD
+ * @param rect Rectangle coordinates and size
+ * @param color 32-bit ARGB color value
+ * @param filled true for filled rectangle, false for outline
+ * @return HAL_LCD_OK on success, error code otherwise
+ */
+hal_lcd_status_t hal_lcd_draw_rectangle(hal_lcd_rect_t rect, uint32_t color, bool filled);
 
 /*=============================================================================
  * HAL System Functions
