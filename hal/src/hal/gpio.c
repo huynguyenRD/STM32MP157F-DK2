@@ -254,12 +254,12 @@ hal_status_t hal_button_get_state(hal_button_t button, hal_button_state_t *state
     return HAL_OK;
 }
 
-/* HAL system functions */
-hal_status_t hal_init(void)
+/* GPIO module initialization functions */
+hal_status_t hal_gpio_init(void)
 {
     hal_status_t status;
     
-    printf("Initializing HAL subsystems...\n");
+    printf("Initializing GPIO subsystems...\n");
     
     status = hal_led_init();
     if (status != HAL_OK) {
@@ -273,27 +273,21 @@ hal_status_t hal_init(void)
         return status;
     }
     
-    printf("HAL initialization complete\n");
+    gpio_initialized = true;
+    printf("GPIO subsystem initialization complete\n");
     return HAL_OK;
 }
 
-hal_status_t hal_deinit(void)
+hal_status_t hal_gpio_deinit(void)
 {
-    printf("Deinitializing HAL subsystems...\n");
+    printf("Deinitializing GPIO subsystems...\n");
     
     hal_led_deinit();
     hal_button_deinit();
     
-    printf("HAL deinitialization complete\n");
+    gpio_initialized = false;
+    printf("GPIO subsystem deinitialization complete\n");
     return HAL_OK;
 }
 
-const char* hal_get_version(void)
-{
-    return "STM32MP157F-DK2 HAL v1.0.0";
-}
 
-bool hal_is_initialized(void)
-{
-    return gpio_initialized;
-}

@@ -203,6 +203,84 @@ hal_lcd_status_t hal_lcd_set_pixel(uint16_t x, uint16_t y, uint32_t color);
 hal_lcd_status_t hal_lcd_draw_rectangle(hal_lcd_rect_t rect, uint32_t color, bool filled);
 
 /*=============================================================================
+ * Touch Interface Control Functions  
+ *============================================================================*/
+
+/* Touch Definitions - FocalTech FT6236 */
+#define HAL_TOUCH_MAX_POINTS    2           /* Maximum simultaneous touch points */
+#define HAL_TOUCH_WIDTH         480         /* Touch panel width */
+#define HAL_TOUCH_HEIGHT        800         /* Touch panel height */
+
+typedef enum {
+    HAL_TOUCH_OK = 0,
+    HAL_TOUCH_ERROR,
+    HAL_TOUCH_INVALID_PARAM,
+    HAL_TOUCH_NOT_INITIALIZED,
+    HAL_TOUCH_NO_DATA
+} hal_touch_status_t;
+
+typedef enum {
+    HAL_TOUCH_EVENT_NONE = 0,
+    HAL_TOUCH_EVENT_PRESS,
+    HAL_TOUCH_EVENT_RELEASE,
+    HAL_TOUCH_EVENT_MOVE
+} hal_touch_event_t;
+
+typedef struct {
+    uint16_t x;                 /* X coordinate (0-479) */
+    uint16_t y;                 /* Y coordinate (0-799) */
+    uint8_t id;                 /* Touch point ID (0-1) */
+    hal_touch_event_t event;    /* Touch event type */
+    uint8_t pressure;           /* Touch pressure (0-255, if supported) */
+    bool valid;                 /* True if this touch point is valid */
+} hal_touch_point_t;
+
+typedef struct {
+    hal_touch_point_t points[HAL_TOUCH_MAX_POINTS];
+    uint8_t count;              /* Number of active touch points */
+    uint32_t timestamp;         /* Timestamp of touch event */
+} hal_touch_data_t;
+
+/**
+ * @brief Initialize the touch subsystem
+ * @return HAL_TOUCH_OK on success, error code otherwise
+ */
+hal_touch_status_t hal_touch_init(void);
+
+/**
+ * @brief Deinitialize the touch subsystem
+ * @return HAL_TOUCH_OK on success, error code otherwise
+ */
+hal_touch_status_t hal_touch_deinit(void);
+
+/**
+ * @brief Read current touch data
+ * @param data Pointer to store touch data
+ * @return HAL_TOUCH_OK on success, error code otherwise
+ */
+hal_touch_status_t hal_touch_read(hal_touch_data_t *data);
+
+/**
+ * @brief Check if touch panel is being touched
+ * @return true if touched, false otherwise
+ */
+bool hal_touch_is_touched(void);
+
+/**
+ * @brief Get single touch point (for simple applications)
+ * @param x Pointer to store X coordinate
+ * @param y Pointer to store Y coordinate
+ * @return HAL_TOUCH_OK if touch detected, HAL_TOUCH_NO_DATA if no touch
+ */
+hal_touch_status_t hal_touch_get_point(uint16_t *x, uint16_t *y);
+
+/**
+ * @brief Calibrate touch panel (if needed)
+ * @return HAL_TOUCH_OK on success, error code otherwise
+ */
+hal_touch_status_t hal_touch_calibrate(void);
+
+/*=============================================================================
  * HAL System Functions
  *============================================================================*/
 
@@ -229,5 +307,21 @@ const char* hal_get_version(void);
  * @return true if initialized, false otherwise
  */
 bool hal_is_initialized(void);
+
+/*============================================================================*
+ * GPIO Subsystem Functions
+ *============================================================================*/
+
+/**
+ * @brief Initialize the GPIO subsystem (LEDs, buttons)
+ * @return HAL_OK on success, error code otherwise
+ */
+hal_status_t hal_gpio_init(void);
+
+/**
+ * @brief Deinitialize the GPIO subsystem
+ * @return HAL_OK on success, error code otherwise
+ */
+hal_status_t hal_gpio_deinit(void);
 
 #endif /* HAL_H */
