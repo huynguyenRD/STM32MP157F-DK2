@@ -24,6 +24,7 @@
 #include <string.h>
 #include <time.h>
 #include <signal.h>
+#include <stdbool.h>
 
 /* Test configuration */
 #define TOUCH_POLL_INTERVAL_MS  20      /* 50 Hz polling rate */
@@ -37,6 +38,13 @@
 #define COLOR_TRAIL         0xFF808080  /* Gray for touch trail */
 #define COLOR_TEXT          0xFFFFFFFF  /* White for text */
 #define COLOR_BORDER        0xFF0000FF  /* Blue for borders */
+
+#define FRAME_BUDGET_MS 16  /* ~16.6ms/khung */
+
+static inline uint32_t now_ms(void){
+    struct timespec ts; clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (uint32_t)(ts.tv_sec*1000u + ts.tv_nsec/1000000u);
+}
 
 /* --- add: runtime helpers config --- */
 #define CLEAR_HOLD_MS  2000   /* giữ góc trái-trên ≥ 2s để clear */
@@ -200,6 +208,15 @@ static void test_touch_and_draw(void)
     printf("Press Ctrl+C to exit this test.\n\n");
 
     clear_screen_with_border();
+    for (int x = 0; x < HAL_TOUCH_WIDTH; x += 40) {
+        hal_lcd_rect_t rc = { x, 0, 1, HAL_TOUCH_HEIGHT };
+        hal_lcd_draw_rectangle(rc, 0xFF404040u, true);
+    }
+    for (int y = 0; y < HAL_TOUCH_HEIGHT; y += 40) {
+        hal_lcd_rect_t rc = { 0, y, HAL_TOUCH_WIDTH, 1 };
+        hal_lcd_draw_rectangle(rc, 0xFF404040u, true);
+    }
+
     memset(touch_trail, 0, sizeof(touch_trail));
     trail_index = 0;
     
@@ -208,6 +225,12 @@ static void test_touch_and_draw(void)
     while (running && (time(NULL) - start_time) < 60) {  /* 60 second test */
         hal_touch_data_t touch_data;
         hal_touch_status_t status = hal_touch_read(&touch_data);
+
+        /* --- add: frame pacing ~60 FPS --- */
+        static uint32_t last = 0;
+        uint32_t now = now_ms();
+        if (last && (now - last) < FRAME_BUDGET_MS) { usleep(1000); continue; }
+        last = now;
         
         if (status == HAL_TOUCH_OK && touch_data.count > 0) {
             for (int i = 0; i < touch_data.count; i++) {
@@ -229,8 +252,8 @@ static void test_touch_and_draw(void)
         update_trail();
         draw_trail();
         
+        // hal_lcd_flush();
         fps_tick();
-        usleep(TOUCH_POLL_INTERVAL_MS * 1000);
     }
     
     printf("Touch and draw test completed.\n");
@@ -252,19 +275,15 @@ static void draw_touch_point(uint16_t x, uint16_t y, uint32_t color)
 /* Helper function to draw crosshair */
 static void draw_crosshair(uint16_t x, uint16_t y, uint32_t color)
 {
-    /* Draw horizontal line */
-    for (int i = -10; i <= 10; i++) {
-        if (x + i >= 0 && x + i < HAL_TOUCH_WIDTH) {
-            hal_lcd_set_pixel(x + i, y, color);
-        }
-    }
-    
-    /* Draw vertical line */
-    for (int i = -10; i <= 10; i++) {
-        if (y + i >= 0 && y + i < HAL_TOUCH_HEIGHT) {
-            hal_lcd_set_pixel(x, y + i, color);
-        }
-    }
+    int x0 = (x >= 10) ? x - 10 : 0;
+    int x1 = (x + 10 < HAL_TOUCH_WIDTH)  ? x + 10 : (HAL_TOUCH_WIDTH  - 1);
+    int y0 = (y >= 10) ? y - 10 : 0;
+    int y1 = (y + 10 < HAL_TOUCH_HEIGHT) ? y + 10 : (HAL_TOUCH_HEIGHT - 1);
+
+    hal_lcd_rect_t h = (hal_lcd_rect_t){ x0, y, (x1 - x0 + 1), 1 };
+    hal_lcd_rect_t v = (hal_lcd_rect_t){ x, y0, 1, (y1 - y0 + 1) };
+    hal_lcd_draw_rectangle(h, color, true);
+    hal_lcd_draw_rectangle(v, color, true);
 }
 
 /* Helper function to draw touch information */
