@@ -16,6 +16,7 @@
  * @date August 2025
  */
 
+#define _GNU_SOURCE
 #include "../include/hal.h"
 #include <stdio.h>
 #include <unistd.h>
@@ -36,6 +37,10 @@
 #define COLOR_TRAIL         0xFF808080  /* Gray for touch trail */
 #define COLOR_TEXT          0xFFFFFFFF  /* White for text */
 #define COLOR_BORDER        0xFF0000FF  /* Blue for borders */
+
+/* --- add: runtime helpers config --- */
+#define CLEAR_HOLD_MS  2000   /* giữ góc trái-trên ≥ 2s để clear */
+#define GRID_STEP_PX   40     /* khoảng cách ô lưới *
 
 /* Touch trail structure */
 typedef struct {
@@ -60,6 +65,12 @@ static void draw_trail(void);
 static void update_trail(void);
 static void draw_crosshair(uint16_t x, uint16_t y, uint32_t color);
 static void clear_screen_with_border(void);
+static inline uint32_t XRGB(uint8_t r,uint8_t g,uint8_t b);
+static uint32_t slot_color(int slot);
+static int in_top_left(int x,int y);
+static int should_clear(int touching,int x,int y);
+static void fps_tick(void);
+static void draw_grid(void);
 
 /* Signal handler for clean exit */
 static void signal_handler(int sig)
@@ -77,6 +88,7 @@ static void test_basic_touch(void)
     printf("Press Ctrl+C to exit this test.\n\n");
 
     clear_screen_with_border();
+    draw_grid();
     
     int touch_count = 0;
     time_t start_time = time(NULL);
@@ -88,6 +100,14 @@ static void test_basic_touch(void)
         if (status == HAL_TOUCH_OK && touch_data.count > 0) {
             for (int i = 0; i < touch_data.count; i++) {
                 if (touch_data.points[i].valid) {
+                    /* --- add: clear gesture (hold top-left >= 2s) --- */
+                    if (should_clear(1, touch_data.points[i].x, touch_data.points[i].y)) {
+                        hal_lcd_clear(COLOR_BACKGROUND);
+                        clear_screen_with_border();
+                        draw_grid();
+                        continue; /* bỏ vẽ frame này */
+                    }
+
                     printf("Touch %d: X=%d, Y=%d, Event=%d, Pressure=%d\n",
                            touch_data.points[i].id,
                            touch_data.points[i].x,
@@ -96,7 +116,9 @@ static void test_basic_touch(void)
                            touch_data.points[i].pressure);
                     
                     /* Draw touch point on screen */
-                    uint32_t color = (i == 0) ? COLOR_TOUCH_1 : COLOR_TOUCH_2;
+                    // uint32_t color = (i == 0) ? COLOR_TOUCH_1 : COLOR_TOUCH_2;
+                    /* --- change: color per slot --- */
+                    uint32_t color = slot_color(i);
                     draw_touch_point(touch_data.points[i].x, touch_data.points[i].y, color);
                     
                     if (touch_data.points[i].event == HAL_TOUCH_EVENT_PRESS) {
@@ -207,6 +229,7 @@ static void test_touch_and_draw(void)
         update_trail();
         draw_trail();
         
+        fps_tick();
         usleep(TOUCH_POLL_INTERVAL_MS * 1000);
     }
     
@@ -313,6 +336,64 @@ static void clear_screen_with_border(void)
     
     for (int i = 0; i < 4; i++) {
         hal_lcd_draw_rectangle(corners[i], COLOR_BORDER, true);
+    }
+}
+
+static inline uint32_t XRGB(uint8_t r,uint8_t g,uint8_t b){
+    return (0xFFu<<24)|(r<<16)|(g<<8)|b;
+}
+
+static uint32_t slot_color(int slot){
+    switch (slot & 3){
+        case 0: return COLOR_TOUCH_1;                 /* đỏ */
+        case 1: return COLOR_TOUCH_2;                 /* xanh lục */
+        case 2: return XRGB(0x20,0xA0,0xFF);          /* xanh dương nhạt */
+        default:return XRGB(0xFF,0x80,0x20);          /* cam */
+    }
+}
+
+static int in_top_left(int x,int y){
+    return (x >= 0 && y >= 0 && x < 40 && y < 40);    /* vùng kích hoạt */
+}
+
+static int should_clear(int touching,int x,int y){
+    static int active = 0;
+    static struct timespec t0 = {0};
+    struct timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &now);
+
+    if (touching && in_top_left(x,y)){
+        if (!active){ active = 1; t0 = now; }
+        long ms = (now.tv_sec - t0.tv_sec)*1000 + (now.tv_nsec - t0.tv_nsec)/1000000;
+        return ms >= CLEAR_HOLD_MS;
+    } else {
+        active = 0;
+        return 0;
+    }
+}
+
+static void fps_tick(void){
+    static unsigned frames = 0;
+    static time_t last = 0;
+    time_t t = time(NULL);
+    frames++;
+    if (!last) last = t;
+    if (t - last >= 1){
+        printf("FPS=%u\n", frames);
+        frames = 0;
+        last = t;
+    }
+}
+
+static void draw_grid(void){
+    /* vẽ lưới 40 px, dùng rectangle 1px để tối ưu */
+    for (int x = 0; x < HAL_TOUCH_WIDTH; x += GRID_STEP_PX){
+        hal_lcd_rect_t v = { .x = x, .y = 0, .width = 1, .height = HAL_TOUCH_HEIGHT };
+        hal_lcd_draw_rectangle(v, 0xFF404040u, true);
+    }
+    for (int y = 0; y < HAL_TOUCH_HEIGHT; y += GRID_STEP_PX){
+        hal_lcd_rect_t h = { .x = 0, .y = y, .width = HAL_TOUCH_WIDTH, .height = 1 };
+        hal_lcd_draw_rectangle(h, 0xFF404040u, true);
     }
 }
 
