@@ -2,14 +2,21 @@
 # ===================================
 
 # Use Buildroot toolchain
-BUILDROOT_PATH = ../../STM32/buildroot/output/host
-SYSROOT = $(BUILDROOT_PATH)/arm-buildroot-linux-gnueabihf/sysroot
-
-# Cross-compiler and flags
-CC = $(BUILDROOT_PATH)/bin/arm-linux-gcc
-CFLAGS = -Wall -Wextra -std=c99 -g -O2 --sysroot=$(SYSROOT)
-INCLUDES = -Iinclude
-LDFLAGS = --sysroot=$(SYSROOT)
+# Check if we're being built by buildroot (CC will be set by buildroot)
+ifeq ($(origin CC),environment)
+    # Building with buildroot - use provided environment
+    CFLAGS ?= -Wall -Wextra -std=c99 -g -O2
+    INCLUDES = -Iinclude
+    LDFLAGS ?=
+else
+    # Building standalone - use local buildroot
+    BUILDROOT_PATH = ../../STM32/buildroot/output/host
+    SYSROOT = $(BUILDROOT_PATH)/arm-buildroot-linux-gnueabihf/sysroot
+    CC = $(BUILDROOT_PATH)/bin/arm-linux-gcc
+    CFLAGS = -Wall -Wextra -std=c99 -g -O2 --sysroot=$(SYSROOT)
+    INCLUDES = -Iinclude
+    LDFLAGS = --sysroot=$(SYSROOT)
+endif
 
 # Directories
 SRC_DIR = src
