@@ -1,0 +1,13 @@
+# Build directories and artifacts
+**/build/
+**/obj/
+**/bin/
+*.o
+*.a
+*.so
+*.so.*
+
+# Backup files
+*.bak
+*.orig
+*~
