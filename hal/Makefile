@@ -2,9 +2,9 @@
 # ===================================
 
 # Use Buildroot toolchain
-# Check if we're being built by buildroot (CC will be set by buildroot)
-ifeq ($(origin CC),environment)
-    # Building with buildroot - use provided environment
+# Check if we're being built by buildroot (STAGING_DIR will be set by buildroot)
+ifdef STAGING_DIR
+    # Building with buildroot - use provided environment (no custom sysroot)
     CFLAGS ?= -Wall -Wextra -std=c99 -g -O2
     INCLUDES = -Iinclude
     LDFLAGS ?=
