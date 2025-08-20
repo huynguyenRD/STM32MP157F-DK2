@@ -49,11 +49,6 @@ void hal_ui_fill_rect(int x, int y, int w, int h, uint32_t color) {
     hal_lcd_draw_rectangle(rect, color, true);
 }
 
-static void hal_lcd_swap(void) {
-    return;
-
-}
-
 int hal_ui_bar3(int cpu, int mem, int temp) {
     if (!s_enabled) return -1;
 

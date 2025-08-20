@@ -202,6 +202,25 @@ hal_lcd_status_t hal_lcd_set_pixel(uint16_t x, uint16_t y, uint32_t color);
  */
 hal_lcd_status_t hal_lcd_draw_rectangle(hal_lcd_rect_t rect, uint32_t color, bool filled);
 
+/**
+ * @brief Shutdown the LCD subsystem
+ * @return HAL_LCD_OK on success, error code otherwise
+ */
+hal_lcd_status_t hal_lcd_shutdown(void);
+
+/**
+ * @brief Get LCD information
+ * @param info Pointer to structure to fill with LCD info
+ * @return HAL_LCD_OK on success, error code otherwise
+ */
+hal_lcd_status_t hal_lcd_get_info(void *info);
+
+/**
+ * @brief Swap/refresh the LCD display buffer
+ * @return HAL_LCD_OK on success, error code otherwise
+ */
+hal_lcd_status_t hal_lcd_swap(void);
+
 /*=============================================================================
  * Touch Interface Control Functions  
  *============================================================================*/

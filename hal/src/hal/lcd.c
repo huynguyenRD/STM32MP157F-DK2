@@ -563,3 +563,59 @@ hal_lcd_status_t hal_lcd_draw_rectangle(hal_lcd_rect_t rect, uint32_t color, boo
     
     return HAL_LCD_OK;
 }
+
+/**
+ * @brief Shutdown the LCD subsystem
+ * @return HAL_LCD_OK on success, error code otherwise
+ */
+hal_lcd_status_t hal_lcd_shutdown(void)
+{
+    /* Call deinit function */
+    return hal_lcd_deinit();
+}
+
+/**
+ * @brief Get LCD information
+ * @param info Pointer to structure to fill with LCD info
+ * @return HAL_LCD_OK on success, error code otherwise
+ */
+hal_lcd_status_t hal_lcd_get_info(void *info)
+{
+    if (!lcd_initialized) {
+        return HAL_LCD_NOT_INITIALIZED;
+    }
+    
+    if (info == NULL) {
+        return HAL_LCD_INVALID_PARAM;
+    }
+    
+    /* Assume info is hal_ui_info_t structure */
+    typedef struct {
+        int w, h;
+        int bpp;
+        int pitch;
+    } hal_ui_info_t;
+    
+    hal_ui_info_t *lcd_info = (hal_ui_info_t *)info;
+    lcd_info->w = LCD_WIDTH;
+    lcd_info->h = LCD_HEIGHT;
+    lcd_info->bpp = LCD_BPP;
+    lcd_info->pitch = LCD_WIDTH * (LCD_BPP / 8);
+    
+    return HAL_LCD_OK;
+}
+
+/**
+ * @brief Swap/refresh the LCD display buffer
+ * @return HAL_LCD_OK on success, error code otherwise
+ */
+hal_lcd_status_t hal_lcd_swap(void)
+{
+    if (!lcd_initialized) {
+        return HAL_LCD_NOT_INITIALIZED;
+    }
+    
+    /* For framebuffer-based LCD, no explicit swap needed */
+    /* The buffer is automatically displayed */
+    return HAL_LCD_OK;
+}
